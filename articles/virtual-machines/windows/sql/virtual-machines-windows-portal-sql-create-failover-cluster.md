@@ -1,6 +1,6 @@
 ---
 title: SQL Server FCI - Azure Virtual Machines | Microsoft Docs
-description: "This article explains how to create SQL Server Failover Cluster Instance on Azure Virtual Machines."
+description: "This article explains how to create SQL Server Always On Failover Cluster Instance on Azure Virtual Machines."
 services: virtual-machines
 documentationCenter: na
 authors: MikeRayMSFT
@@ -22,7 +22,7 @@ ms.author: mikeray
 
 # Configure SQL Server Failover Cluster Instance on Azure Virtual Machines
 
-This article explains how to create a SQL Server Failover Cluster Instance (FCI) on Azure virtual machines in Resource Manager model. This solution uses [Windows Server 2016 Datacenter edition Storage Spaces Direct \(S2D\)](http://technet.microsoft.com/windows-server-docs/storage/storage-spaces/storage-spaces-direct-overview) as a software-based virtual SAN that synchronizes the storage (data disks) between the nodes (Azure VMs) in a Windows Cluster. S2D is new in Windows Server 2016.
+This article explains how to create an Always On Failover Cluster Instance (FCI) on Azure virtual machines in Resource Manager model. This solution uses [Windows Server 2016 Datacenter edition Storage Spaces Direct \(S2D\)](http://technet.microsoft.com/windows-server-docs/storage/storage-spaces/storage-spaces-direct-overview) as a software-based virtual SAN that synchronizes the storage (data disks) between the nodes (Azure VMs) in a Windows Cluster. S2D was introduced in Windows Server 2016.
 
 The following diagram shows the complete solution on Azure virtual machines:
 
@@ -33,7 +33,7 @@ The preceding diagram shows:
 - Two Azure virtual machines in a Windows Failover Cluster. When a virtual machine is in a failover cluster it is also called a *cluster node*, or *nodes*.
 - Each virtual machine has two or more data disks.
 - S2D synchronizes the data on the data disk and presents the synchronized storage as a storage pool.
-- The storage pool presents a cluster shared volume (CSV) to the failover cluster.
+- The storage pool presents a cluster shared volume (CSV) to the failover cluster. It should be noted that a CSV is one way to present storage. You can also carve up drive letters.
 - The SQL Server FCI cluster role uses the CSV for the data drives.
 - An Azure load balancer to hold the IP address for the SQL Server FCI.
 - An Azure availability set holds all the resources.
@@ -43,15 +43,19 @@ The preceding diagram shows:
 
 For details about S2D, see [Windows Server 2016 Datacenter edition Storage Spaces Direct \(S2D\)](http://technet.microsoft.com/windows-server-docs/storage/storage-spaces/storage-spaces-direct-overview).
 
+>[!NOTE]
+   >Make sure to follow the guidelines for S2D configured in virtual machines (VMs) [here](https://docs.microsoft.com/en-us/windows-server/storage/storage-spaces/storage-spaces-direct-in-vm).
+
+
 S2D supports two types of architectures - converged and hyper-converged. The architecture in this document is hyper-converged. A hyper-converged infrastructure places the storage on the same servers that host the clustered application. In this architecture, the storage is on each SQL Server FCI node.
 
 ## Licensing and pricing
 
 On Azure Virtual Machines you can license SQL Server using pay as you go (PAYG) or bring your own license (BYOL) VM images. The type of image you choose affects how you are charged.
 
-With PAYG licensing, a failover cluster instance (FCI) of SQL Server on Azure Virtual Machines incurs charges for all nodes of FCI, including the passive nodes. For more information, see [SQL Server Enterprise Virtual Machines Pricing](http://azure.microsoft.com/pricing/details/virtual-machines/sql-server-enterprise/). 
+With PAYG licensing, a FCI on Azure Virtual Machines incurs charges for all nodes of the WSFC participating in the FCI, including the nodes currentlnot hosting the instance. For more information, see [SQL Server Enterprise Virtual Machines Pricing](http://azure.microsoft.com/pricing/details/virtual-machines/sql-server-enterprise/). 
 
-Customers with Enterprise Agreement with Software Assurance have the right to use one free passive FCI node for each active node. To take advantage of this benefit In Azure, use BYOL VM images and then use the same license on both the active and passive nodes of the FCI. For more information, see [Enterprise Agreement](http://www.microsoft.com/en-us/Licensing/licensing-programs/enterprise.aspx).
+Customers with Enterprise Agreement with Software Assurance have the right to use one free WSFC node for each active node since they are in the same region. To take advantage of this benefit In Azure, use BYOL VM images and then use the same license on both the active and passive nodes of the FCI. For more information, see [Enterprise Agreement](http://www.microsoft.com/en-us/Licensing/licensing-programs/enterprise.aspx).
 
 To compare PAYG and BYOL licensing for SQL Server on Azure Virtual Machines see [Get started with SQL VMs](virtual-machines-windows-sql-server-iaas-overview.md#get-started-with-sql-vms).
 
